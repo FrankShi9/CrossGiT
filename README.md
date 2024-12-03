@@ -10,10 +10,10 @@ Next Gen Graph-Image-Text Cross-Modal Transformer von Neumann prototype for quan
 ## Uniform Gaussian Duality Activation
   no more deep stacking and large params
   
-## Uniform unit Conv1d for graph, text even audio
+## Uniform unit Conv1d for graph, text, audio..
   no more seperate models for each modality
   
-## Uniform unit Conv2d for images from camera/radar/lidar
+## Uniform unit Conv2d for images from camera/radar/lidar..
   no more seperate models for each sensors
 
 ## One embedding for all
