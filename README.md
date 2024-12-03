@@ -1,6 +1,6 @@
 # CrossGiT
 Next Gen Graph-Image-Text Cross-Modal Transformer
-for quantum and analog computers (future of us all)
+for quantum and analog computers (even better waiting on you, future of us all)
 
 ## Uniform Gaussian Attention & random embedding
   no more norm, dropout and handcrafted embedding
