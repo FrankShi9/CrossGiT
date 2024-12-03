@@ -2,6 +2,8 @@
 Next Gen Graph-Image-Text Cross-Modal Transformer
 for quantum and analog computers (even better waiting on you, future of us all)
 
+## Forget Einsum, do elementwise ops parallelism
+
 ## Uniform Gaussian Attention & random embedding
   no more norm, dropout and handcrafted embedding
   
