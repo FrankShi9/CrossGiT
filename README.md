@@ -2,7 +2,8 @@
 Next Gen Graph-Image-Text Cross-Modal Transformer von Neumann prototype for quantum and analog computers (even better waiting on you, future of us all)
 
 ## Forget Einsum, consider elementwise ops parallelism
-
+  broadcasting helps us all
+  
 ## Uniform Gaussian Attention & random embedding
   no more norm, dropout and handcrafted embedding
   
