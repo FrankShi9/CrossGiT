@@ -1,6 +1,5 @@
 # CrossGiT
-Next Gen Graph-Image-Text Cross-Modal Transformer
-for quantum and analog computers (even better waiting on you, future of us all)
+Next Gen Graph-Image-Text Cross-Modal Transformer von Neumann prototype for quantum and analog computers (even better waiting on you, future of us all)
 
 ## Forget Einsum, do elementwise ops parallelism
 
