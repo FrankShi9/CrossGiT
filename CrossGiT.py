@@ -46,12 +46,12 @@ class CrossGiT(nn.Module):
         前向传播函数。
         rich info reduces the need for norm and dropout
         Args:
-            g (Tensor): 图的特征张量。
-            i (Tensor): 输入的image特征张量。
-            t (Tensor): 时间序列的特征张量。
+            g (Tensor): graph特征张量。
+            i (Tensor): image特征张量。
+            t (Tensor): text特征张量。
         
         Returns:
-            Tensor: 经过注意力机制处理后的输出张量。
+            Tensor: 输出张量
         """
 
         gc = self.act * (self.conv0(g)) * self.pos # graph node mask
