@@ -22,7 +22,7 @@ class UniformAttention(nn.Module):
         Returns:
             Tensor: 经过注意力机制处理后的输出张量。
         """
-        return self.act * (w * (q + k + v))
+        return self.act * (self.w * (q + k + v))
 
 
 ''' Graph-Image-Text Cross-Modal Transformer '''
