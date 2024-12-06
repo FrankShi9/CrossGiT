@@ -54,21 +54,21 @@ class CrossGiT(nn.Module):
             Tensor: 经过注意力机制处理后的输出张量。
         """
 
-        gc = self.act * (self.conv0(g)) * self.pos # graph node mask
+        gc = self.act * self.conv0(self.conv0(g)) * self.pos # graph node mask
         tc = self.act * (self.conv0(t)) + self.pos # text shift
         ic = self.conv3(self.conv2(self.conv1(i))) # image fft
         
         # query is graph, key is text, value is image
-        fs = self.fc(self.att(gc, tc, ic)) # att as norm
+        fs = F.leaky_relu(self.fc(self.att(gc, tc, ic))) # att as norm
 
         # graph residual cross modal broadcast fusion (mix of gaussian)
         fs = torch.sum(fs, dim=3)
 
-        return self.att(fs, gc+ic, ic+tc)
+        return self.fc(self.att(fs, gc+ic, ic+tc))
 
 
 if __name__ == '__main__':
-    model = CrossGiT(16, 3)
+    model = CrossGiT(16, 16)
 
     graph = torch.randn(1, 1, 16)
     image = torch.randn(1, 3, 16, 16)
@@ -76,11 +76,12 @@ if __name__ == '__main__':
 
     y_g = torch.randn(1, 1, 16, 16)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     model.train()
-    for _ in range(5):
+    for _ in range(300):
         y_hat = model(graph, image, text)
+        optimizer.zero_grad()
         loss = F.mse_loss(y_hat, y_g)
         loss.backward()
         optimizer.step()
@@ -92,6 +93,6 @@ if __name__ == '__main__':
         y_hat = model(graph, image, text)
     
     print(y_hat.shape)
-    print(torch.sum(torch.abs(y_g-y_hat)))
+    print(torch.sum(torch.abs(y_g-y_hat))/256)
         
     
