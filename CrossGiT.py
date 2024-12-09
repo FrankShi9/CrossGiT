@@ -1,12 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
 
 
 class UniformAttention(nn.Module):
     def __init__(self):
         super(UniformAttention, self).__init__()
-        self.act = torch.randint(2,(1,)) * torch.normal(0,1,size=(1,)) # quant normal activation
         self.w = nn.Parameter(torch.randn(1)) # quant normal weight
 
 
@@ -22,7 +22,8 @@ class UniformAttention(nn.Module):
         Returns:
             Tensor: 经过注意力机制处理后的输出张量。
         """
-        return self.act * (self.w * (q + k + v))
+        act = torch.randint(2,(1,)) * torch.normal(0,1,size=(1,)) # quant normal activation
+        return act * (self.w * (q + k + v))
 
 
 ''' Graph-Image-Text Cross-Modal Transformer '''
@@ -37,9 +38,7 @@ class CrossGiT(nn.Module):
         self.att = UniformAttention()
         self.fc = nn.Linear(latent_dim, out_dim, bias=False) # TODO
 
-        self.pos = nn.Parameter(torch.randn(1, 1, 1)) # postion embedding for g i t
-        self.act = torch.randint(2,(1,)) * torch.normal(0,1,size=(1,)) # quant normal activation
-
+        self.pos = nn.Parameter(torch.randn(1)) # postion embedding
 
     def forward(self, g, i, t):
         """
@@ -53,46 +52,60 @@ class CrossGiT(nn.Module):
         Returns:
             Tensor: 经过注意力机制处理后的输出张量。
         """
-
-        gc = self.act * self.conv0(self.conv0(g)) * self.pos # graph node mask
-        tc = self.act * (self.conv0(t)) + self.pos # text shift
-        ic = self.conv3(self.conv2(self.conv1(i))) # image fft
+        act = torch.randint(2,(1,)) * torch.normal(0,1,size=(1,)) # quant normal activation
+        gc = act * self.conv0(self.conv0(g)) * self.pos # graph node mask
+        tc = act * (self.conv0(t)) + self.pos # text shift
+        ic = self.conv3(self.conv2(self.conv1(i))) * self.pos # image fft
         
         # query is graph, key is text, value is image
         fs = F.leaky_relu(self.fc(self.att(gc, tc, ic))) # att as norm
-
-        # graph residual cross modal broadcast fusion (mix of gaussian)
-        fs = torch.sum(fs, dim=3)
+        fs = fs.squeeze(3)
+       
+        # # graph residual cross modal broadcast fusion (mix of gaussian)
 
         return self.fc(self.att(fs, gc+ic, ic+tc))
 
 
+def reset_parameters(m):
+    if hasattr(m, 'reset_parameters'):
+        m.reset_parameters()
+        print('reset')
+
+
 if __name__ == '__main__':
-    model = CrossGiT(16, 16)
+    model = CrossGiT(16, 1)
 
-    graph = torch.randn(1, 1, 16)
-    image = torch.randn(1, 3, 16, 16)
-    text = torch.randn(1, 1, 16)
+    graph = torch.randn(16, 1, 16)
+    image = torch.randn(16, 3, 16, 16)
+    text = torch.randn(16, 1, 16)
 
-    y_g = torch.randn(1, 1, 16, 16)
+    y_g = torch.randn(16, 1, 16, 16)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     model.train()
-    for _ in range(300):
+    ls = []
+    for epoch in range(200):
+        if epoch % 10 == 0:
+            model.apply(reset_parameters)
+
         y_hat = model(graph, image, text)
         optimizer.zero_grad()
+        y_hat = y_hat.permute((0, 3, 2, 1))
         loss = F.mse_loss(y_hat, y_g)
         loss.backward()
         optimizer.step()
-        print('loss', loss.item())
+        ls.append(loss.item())
 
     model.eval()
 
     with torch.no_grad():
         y_hat = model(graph, image, text)
+        y_hat = y_hat.permute((0, 3, 2, 1))
     
-    print(y_hat.shape)
+    # print(y_hat.shape)
     print(torch.sum(torch.abs(y_g-y_hat))/256)
-        
+
+    plt.plot(ls)
+    plt.show()
     
