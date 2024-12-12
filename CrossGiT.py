@@ -2,6 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings("ignore")
+
+# torch.manual_seed(1)
 
 
 class UniformAttention(nn.Module):
@@ -22,7 +26,13 @@ class UniformAttention(nn.Module):
         Returns:
             Tensor: 经过注意力机制处理后的输出张量。
         """
-        act = torch.randint(2,(1,)) * torch.normal(0,1,size=(1,)) # quant normal activation
+        act = (torch.randint(0,2,(1,))*2-1) * torch.normal(0,1,size=(1,)) # quant normal activation
+        
+        k = torch.remainder(k, 2) * k
+        v = torch.logical_or(torch.rand(v.shape), v) * v
+
+        q = q.unsqueeze(-1)
+
         return act * (self.w * (q + k + v))
 
 
@@ -36,7 +46,9 @@ class CrossGiT(nn.Module):
         self.conv3 = nn.Conv2d(512, 1, kernel_size=1, stride=1, padding=0)
 
         self.att = UniformAttention()
-        self.fc = nn.Linear(latent_dim, out_dim, bias=False) # TODO
+        self.f = nn.Linear(16, out_dim, bias=False)
+        self.fc = nn.Linear(latent_dim, out_dim, bias=False)
+        self.bn = nn.BatchNorm1d(32)
 
         self.pos = nn.Parameter(torch.randn(1)) # postion embedding
 
@@ -58,12 +70,16 @@ class CrossGiT(nn.Module):
         ic = self.conv3(self.conv2(self.conv1(i))) * self.pos # image fft
         
         # query is graph, key is text, value is image
-        fs = F.leaky_relu(self.fc(self.att(gc, tc, ic))) # att as norm
+        fs = F.leaky_relu(self.f(self.att(gc, tc, ic))) # att as norm
         fs = fs.squeeze(3)
-       
-        # # graph residual cross modal broadcast fusion (mix of gaussian)
+        
+        fs = self.bn(fs)
 
-        return self.fc(self.att(fs, gc+ic, ic+tc))
+        # # graph residual cross modal broadcast fusion (mix of gaussian)
+        at = self.att(fs, gc+ic, ic+tc)
+        at = at.permute((0, 3, 2, 1))
+
+        return self.fc(at)
 
 
 def reset_parameters(m):
@@ -73,38 +89,38 @@ def reset_parameters(m):
 
 
 if __name__ == '__main__':
-    model = CrossGiT(16, 1)
+    model = CrossGiT(32, 1)
 
-    graph = torch.randn(16, 1, 16)
-    image = torch.randn(16, 3, 16, 16)
-    text = torch.randn(16, 1, 16)
+    graph = torch.randn(32, 1, 16)
+    image = torch.randn(32, 3, 16, 16)
+    text = torch.randn(32, 1, 16)
 
-    y_g = torch.randn(16, 1, 16, 16)
+    y_g = torch.randn(32, 1, 16, 16)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
 
-    model.train()
+    
     ls = []
-    for epoch in range(200):
-        if epoch % 10 == 0:
-            model.apply(reset_parameters)
+    for epoch in range(10):
+        model.train()
+        # if epoch % 10 == 0:
+        #     model.apply(reset_parameters)
 
         y_hat = model(graph, image, text)
         optimizer.zero_grad()
-        y_hat = y_hat.permute((0, 3, 2, 1))
+        y_hat = y_hat.permute((0, 3, 1, 2))
+
         loss = F.mse_loss(y_hat, y_g)
         loss.backward()
         optimizer.step()
-        ls.append(loss.item())
+        
 
-    model.eval()
+        model.eval()
+        with torch.no_grad():
+            y_hat = model(graph, image, text)
+            y_hat = y_hat.permute((0, 3, 2, 1))
+            ls.append(F.mse_loss(y_hat, y_g).item())
 
-    with torch.no_grad():
-        y_hat = model(graph, image, text)
-        y_hat = y_hat.permute((0, 3, 2, 1))
-    
-    # print(y_hat.shape)
-    print(torch.sum(torch.abs(y_g-y_hat))/256)
 
     plt.plot(ls)
     plt.show()
