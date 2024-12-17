@@ -1,8 +1,8 @@
 # CrossGiT
-Next Gen Graph-Image-Text Cross-Modal Transformer von Neumann prototype for quantum and analog computers (even better waiting on you, future of us all)
+Stuck at LLM RLHF? Try Next Gen Graph-Image-Text Cross-Modal Transformer
 
-## Forget Einsum, consider elementwise ops parallelism
-  broadcasting helps us all
+## Elementwise ops parallelism
+  broadcasting helps
   
 ## Uniform Gaussian Attention & random embedding
   no more norm, dropout and handcrafted embedding
@@ -23,4 +23,4 @@ Next Gen Graph-Image-Text Cross-Modal Transformer von Neumann prototype for quan
   even better, you say it
   
 ## Fusion inside Uniform Attention is 
-  Mix of Gaussians (or experts) you name it..
+  Mix of Gaussians (or experts)
